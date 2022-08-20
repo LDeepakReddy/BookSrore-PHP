@@ -1,0 +1,161 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Support\Facades\Validator;
+use App\Models\User;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Exceptions\bookstoreexception;
+use Illuminate\Support\Facades\Log;
+
+use Illuminate\Support\Facades\Mail;
+
+
+use App\Mail\Mailer;
+use PharIo\Manifest\Email;
+
+class UserController extends Controller
+{
+    function register(Request $request)
+    {
+        try {
+
+            //valid credential
+            $validator = Validator::make($request->all(), [
+                'role' => 'required|string|between:2,10',
+                'first_name' => 'required|string|between:2,50',
+                'last_name' => 'required|string|between:2,50',
+                'phone_no' => 'required|string|min:10',
+                'email' => 'required|string|email|max:100',
+                'password' => 'required|string|min:6',
+                'confirm_password' => 'required|same:password',
+            ]);
+            if ($validator->fails()) {
+                return response()->json($validator->errors()->toJson(), 400);
+            }
+
+            $userCheck = User::getUserByEmail($request->email);
+            if ($userCheck) {
+                Log::info('The email has already been taken: ');
+                throw new bookstoreexception('The email has already been taken.', 401);
+            }
+
+            $user = User::create([
+                'role' => $request->role,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone_no' => $request->phone_no,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
+            Cache::remember('users', 3600, function () {
+                return DB::table('users')->get();
+            });
+
+            return response()->json([
+                'message' => 'User successfully registered',
+                'user' => $user
+            ], 201);
+        } catch (bookstoreexception $exception) {
+            return response()->json([
+                'message' => $exception->message()
+            ], $exception->statusCode());
+        }
+    }
+
+
+
+
+
+    public function login(Request $request)
+    {
+        try {
+
+            $credentials = $request->only('email', 'password');
+
+            //valid credential
+            $validator = Validator::make($credentials, [
+                'email' => 'required|email',
+                'password' => 'required|string|min:6|max:50'
+            ]);
+
+            //Send failed response if request is not valid
+            if ($validator->fails()) {
+                return response()->json(['error' => 'Invalid credentials entered'], 400);
+            }
+            Cache::remember('users', 3600, function () {
+                return DB::table('users')->get();
+            });
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                Log::error('Not a Registered Email');
+                throw new bookstoreexception('Not a Registered Email', 404);
+                return response()->json([
+                    'message' => 'Email is not registered',
+                ], 404);
+            }
+
+            if (!$token = JWTAuth::attempt($credentials)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Login credentials are invalid.',
+                ], 400);
+            }
+
+            //Token created, return with success response and jwt token
+            Log::info('Login Successful');
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'token' => $token,
+            ], 200);
+        } catch (bookstoreexception $exception) {
+            return response()->json([
+                'message' => $exception->message()
+            ], $exception->statusCode());
+        }
+    }
+
+
+    public function logout(Request $request)
+    {
+        $user = JWTAuth::authenticate($request->token);
+
+        if (!$user) {
+            log::warning('Invalid Authorisation ');
+            return response()->json([
+                'message' => 'Invalid token'
+            ], 401);
+        } else {
+            JWTAuth::invalidate($request->token);
+            log::info('User successfully logged out');
+            return response()->json([
+                'success' => true,
+                'message' => 'User has been logged out'
+            ], 200);
+        }
+    }
+
+
+    public function get_user(Request $request)
+    {
+        $this->validate($request, [
+            'token' => 'required'
+        ]);
+
+        $user = JWTAuth::authenticate($request->token);
+
+        return response()->json(['user' => $user]);
+    }
+
+
+   }
