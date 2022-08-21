@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WishlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,7 +32,7 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::get('get_user', [UserController::class, 'get_user']);
     Route::post('resetPassword', [PasswordController::class, 'resetPassword']);
 
-    
+
     Route::post('addingBook', [BookController::class, 'addingBook']);
     Route::post('updateBookById', [BookController::class, 'updateBookById']);
     Route::post('deleteBookById', [BookController::class, 'deleteBookById']);
@@ -44,5 +47,17 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::get('getAllBooksInCart', [CartController::class, 'getAllBooksInCart']);
     Route::post('increamentBookQuantityInCart', [CartController::class, 'increamentBookQuantityInCart']);
     Route::post('decrementBookQuantityInCart', [CartController::class, 'decrementBookQuantityInCart']);
-    
+
+
+    Route::post('addBookToWishlistByBookId', [WishlistController::class, 'addBookToWishlistByBookId']);
+    Route::post('deleteBookByWishlistId', [WishlistController::class, 'deleteBookByWishlistId']);
+    Route::get('getAllBooksInWishlist', [WishlistController::class, 'getAllBooksInWishlist']);
+
+    Route::post('addAddress', [AddressController::class, 'addAddress']);
+    Route::post('updateAddress', [AddressController::class, 'updateAddress']);
+    Route::post('deleteAddress', [AddressController::class, 'deleteAddress']);
+    Route::post('getAddress', [AddressController::class, 'getAddress']);
+
+    Route::post('placeorder', [OrderController::class, 'placeOrder']);
+    Route::post('cancelorder', [OrderController::class, 'cancelOrder']);
 });

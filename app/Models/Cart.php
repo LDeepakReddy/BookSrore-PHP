@@ -28,4 +28,11 @@ class Cart extends Model
 
         return $books;
     }
+
+    public  function getCartByIdandUserId($cartId, $userId){
+        $cart = Cart::where('id', $cartId)->where('user_id', $userId)->first();
+
+        return $cart;
+    }
+
 }
