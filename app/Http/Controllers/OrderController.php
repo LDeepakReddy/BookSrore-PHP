@@ -58,8 +58,8 @@ class OrderController extends Controller
                                         $order = $orderCheck->placeOrder($request, $currentUser, $book, $cart);
                                         if ($order) {
                                             //    $quantity= $cart->book_quantity;
-                                            $book->quantity  -= $cart->book_quantity;
-                                            $book->save();
+                                            // $book->quantity  -= $cart->book_quantity;
+                                            // $book->save();
 
                                             Mail::to($getUser->email)->send(new sendOrderDetails($getUser, $order, $book));
                                             return response()->json([

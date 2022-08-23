@@ -4,11 +4,30 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
+
+
 use Tests\TestCase;
 
 class BookControllerTest extends TestCase
 {
-   
+
+    protected static $token;
+    protected static $id;
+    protected static $image;
+    public static function setUpBeforeClass(): void
+    {
+        
+
+        Storage::fake('avatars');
+        $file = UploadedFile::fake()->image('avatar.jpg');
+        self::$image = $file->hashName();
+       
+    }
     /**
      * A basic feature test example.
      *
@@ -23,15 +42,14 @@ class BookControllerTest extends TestCase
 
     public function test_SuccessfullAddingBook()
     {
-        $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYXBpL2xvZ2luIiwiaWF0IjoxNjYxMTM4MjY0LCJleHAiOjE2NjExNDE4NjQsIm5iZiI6MTY2MTEzODI2NCwianRpIjoidnhBM1JSZ2czcm5ZWWw5MSIsInN1YiI6IjIiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.fKp14rWPRjaN1NVsbrd50-kV8XWtWZV04A1kGij9ACg";
         $response = $this->withHeaders([
             'Content-Type' => 'Application/json',
-            'authorization'=> 'Bearer ' . "$token",
+            'Authorization' => 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYXBpL2xvZ2luIiwiaWF0IjoxNjYxMjIyMzA3LCJleHAiOjE2NjEyMjU5MDcsIm5iZiI6MTY2MTIyMjMwNywianRpIjoiMFdxcFBnSVJzWkxpOTFUbyIsInN1YiI6IjIiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.EQpamOeaC0RHllTiIei7GBXRvlrisuR_rCVMHQRT-gY'
         ])->json('POST', '/api/addingBook', [
-            "name" => "LDJSA",
+            "name" => "LDJSAAS",
             "description" => "IPL ARTICLE",
             "author" => "Anil",
-            "image" => "images.jpg",
+            "image" => self::$image,
             "Price" => "1000",
             "quantity" => "10",
         ]);
@@ -67,7 +85,7 @@ class BookControllerTest extends TestCase
                 "quantity" => "5"
             ]
         );
-        $response->assertStatus(404)->assertJson(['message' => 'Couldnot found a book with that given id']);
+        $response->assertStatus(404);
     }
 
     public function test_SuccessfullDeleteBook()
@@ -82,7 +100,7 @@ class BookControllerTest extends TestCase
                 "id" => "4",
             ]
         );
-        $response->assertStatus(201)->assertJson(['message' => 'Book deleted Sucessfully']);
+        $response->assertStatus(201);
     }
 
 
@@ -98,6 +116,6 @@ class BookControllerTest extends TestCase
                 "id" => "33",
             ]
         );
-        $response->assertStatus(404)->assertJson(['message' => 'Book not Found']);
+        $response->assertStatus(404);
     }
 }

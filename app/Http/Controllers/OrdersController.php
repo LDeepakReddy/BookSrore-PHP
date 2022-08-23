@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\sendOrderDetails;
+use App\Models\Book;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use LengthException;
@@ -24,6 +25,7 @@ class OrdersController extends Controller
 
     public function placeOrders(Request $request)
     {
+       
         $request->validate([
             'cartId_json' => 'required',
             'address_id' => 'required|integer'
@@ -53,6 +55,7 @@ class OrdersController extends Controller
 
                 
                 $book->quantity  -= $cart->book_quantity;
+                DB::table('books')->where('id', $cart->book_id)->update(['quantity'=>$book->quantity]);
                 
         
             Mail::to($getUser->email)->send(new sendOrderDetails($getUser, $order, $book));
@@ -85,7 +88,7 @@ class OrdersController extends Controller
         $response = DB::table('orders')->where('order_id', $request->order_id)->delete();
 
         $book->quantity += $cart->book_quantity;
-        $book->save();
+        DB::table('books')->where('id', $cart->book_id)->update(['quantity'=>$book->quantity]);
 
         Mail::to($getUser->email)->send(new sendCancelledOrderDetails($getUser, $order, $book));
         return response()->json([

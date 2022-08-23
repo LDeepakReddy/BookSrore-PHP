@@ -102,7 +102,7 @@ class Book extends Model
         $book->author = $request->input('author');
         // $book->image = $request->input('image');
         $book->Price = $request->input('Price');
-        $book->quantity = $request->input('quantity');
+        // $book->quantity = $request->input('quantity');
 
         // if ($request->image) {
         //     $path = str_replace(env('AWS_URL'), '', $book->image);

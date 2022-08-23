@@ -85,7 +85,7 @@ class BookController extends Controller
                 'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,tiff|max:2048',
                 // 'image' => 'required|string|between:5,1000',
                 'Price' => 'required|integer',
-                'quantity' => 'required|integer'
+                // 'quantity' => 'required|integer'
             ]);
 
             if ($validator->fails()) {

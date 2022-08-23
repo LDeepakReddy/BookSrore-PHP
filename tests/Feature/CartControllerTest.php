@@ -36,7 +36,7 @@ class CartControllerTest extends TestCase
                 "book_id" => "8",
             ]
         );
-        $response->assertStatus(201);
+        $response->assertStatus(200);
     }
 
     /**

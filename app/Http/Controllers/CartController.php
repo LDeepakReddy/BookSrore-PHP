@@ -173,6 +173,7 @@ class CartController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required',
+            'book_quantity'=>'required',
         ]);
 
         if ($validator->fails()) {
@@ -198,7 +199,7 @@ class CartController extends Controller
                     'message' => 'Item Not found with this id'
                 ], 404);
             }
-            $cart->book_quantity += 1;
+            $cart->book_quantity += $request->book_quantity;
             $cart->save();
             Log::info('Book Quantity increament Successfully to the bookstore cart');
             return response()->json([
@@ -213,6 +214,7 @@ class CartController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id' => 'required',
+            'book_quantity'=>'required'
         ]);
 
         if ($validator->fails()) {
@@ -238,7 +240,7 @@ class CartController extends Controller
                     'message' => 'Item Not found with this id'
                 ], 404);
             }
-            $cart->book_quantity -= 1;
+            $cart->book_quantity -= $request->book_quantity;
             $cart->save();
             if ($cart->book_quantity == 0) {
                 $cart->delete();
