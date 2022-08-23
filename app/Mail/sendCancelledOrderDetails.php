@@ -30,7 +30,7 @@ class sendCancelledOrderDetails extends Mailable
         
         $this->bookAuthor = $book->author;
         $this->bookPrice = $book->price;
-        $this->quantity = $book->quantity;
+        $this->quantity = $order->book_quantity;;
         $this->totalPrice = $order->total_price;
         $this->user = $getUser->first_name;
         $this->orderId = $order->order_id;

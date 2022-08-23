@@ -26,9 +26,9 @@ class UserController extends Controller
     function register(Request $request)
     {
         try {
-
+            $credentials = $request->only('role','first_name', 'last_name', 'phone_no', 'email', 'password', 'confirm_password');
             //valid credential
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($credentials, [
                 'role' => 'required|string|between:2,10',
                 'first_name' => 'required|string|between:2,50',
                 'last_name' => 'required|string|between:2,50',
@@ -57,6 +57,27 @@ class UserController extends Controller
             ]);
             Cache::remember('users', 3600, function () {
                 return DB::table('users')->get();
+            });
+
+            $token = JWTAuth::attempt($credentials);
+
+
+            $data = array(
+                'name' => $user->first_name, "VerificationLink" => $token,
+                "email" => $request->email,
+                "fromMail" => env('MAIL_USERNAME'),
+                "fromName" => env('APP_NAME'),
+            );
+
+
+            // Mail::send('verifyEmail', $data, function ($message) {
+            //     $message->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+            //     $message->to(env('MAIL_USERNAME'))->subject('verify Email');
+            // });
+            Mail::send('verifyEmail', $data, function ($message) use ($data) {
+
+                $message->to($data['email'], $data['name'])->subject('Verify Email');
+                $message->from('depaknb5@gmail.com', 'Deepak');
             });
 
             return response()->json([
@@ -156,6 +177,33 @@ class UserController extends Controller
 
         return response()->json(['user' => $user]);
     }
+
+    public function verifyMail(Request $request)
+    {
+
+        $this->validate($request, [
+            'token' => 'required'
+        ]);
+
+        $user = JWTAuth::authenticate($request->token);
+        if (!$user) {
+            log::warning('Invalid Authorisation Token ');
+        }
+
+        $time = $user->email_verified_at;
+        if (!$time) {
+            if (!$user) {
+                return response()->json(['not found'], 220);
+            }
+
+            $user->email_verified_at = now();
+            $user->save();
+            return response()->json(['verified successfully'], 201);
+        } else {
+            return response()->json(['already verified'], 222);
+        }
+    }
+
 
 
    }

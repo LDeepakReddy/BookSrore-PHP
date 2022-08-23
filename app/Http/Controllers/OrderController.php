@@ -26,7 +26,7 @@ class OrderController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'cart_id' => 'required|integer',
+                'cart_id' => 'required',
                 'address_id' => 'required|integer'
             ]);
 
@@ -57,6 +57,7 @@ class OrderController extends Controller
                                     if ($address) {
                                         $order = $orderCheck->placeOrder($request, $currentUser, $book, $cart);
                                         if ($order) {
+                                            //    $quantity= $cart->book_quantity;
                                             $book->quantity  -= $cart->book_quantity;
                                             $book->save();
 
@@ -64,8 +65,8 @@ class OrderController extends Controller
                                             return response()->json([
                                                 'message' => 'Order Placed Successfully',
                                                 'OrderId' => $order->order_id,
-                                                'BookName'=>$book->name,
-                                                'Price'=>$book->price,
+                                                'BookName' => $book->name,
+                                                'Price' => $book->price,
                                                 'Quantity' => $cart->book_quantity,
                                                 'Total_Price' => $order->total_price,
                                                 'Message' => 'Mail Sent to Users Mail With Order Details',
@@ -77,8 +78,6 @@ class OrderController extends Controller
                                             Cache::remember('orders', 3600, function () {
                                                 return DB::table('orders')->get();
                                             });
-
-                                           
                                         }
                                     }
                                     Log::error('Address Not Found');
@@ -143,11 +142,9 @@ class OrderController extends Controller
                                     'Message' => 'Mail Sent to Users Mail With Order Details'
                                 ], 200);
 
-                
+
                                 Log::info('Order Cancelled Successfully');
                                 Cache::forget('orders');
-
-                                
                             }
                         }
                         Log::error('Order Not Found');

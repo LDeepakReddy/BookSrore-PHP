@@ -4,6 +4,7 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
@@ -30,6 +31,7 @@ Route::post('forgotPassword', [PasswordController::class, 'forgotPassword']);
 Route::group(['middleware' => ['jwt.verify']], function () {
     Route::get('logout', [UserController::class, 'logout']);
     Route::get('get_user', [UserController::class, 'get_user']);
+    Route::post('verifyMail', [UserController::class, 'verifyMail']);
     Route::post('resetPassword', [PasswordController::class, 'resetPassword']);
 
 
@@ -60,4 +62,7 @@ Route::group(['middleware' => ['jwt.verify']], function () {
 
     Route::post('placeorder', [OrderController::class, 'placeOrder']);
     Route::post('cancelorder', [OrderController::class, 'cancelOrder']);
+
+    Route::post('placeOrders', [OrdersController::class, 'placeOrders']);
+    Route::post('cancelOrders', [OrdersController::class, 'cancelOrders']);
 });
