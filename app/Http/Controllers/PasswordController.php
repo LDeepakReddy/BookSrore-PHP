@@ -38,6 +38,7 @@ class PasswordController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
+            log::error('Email is not registeres');
             return response()->json([
                 'message' => 'Email is not registered',
             ], 402);
@@ -56,7 +57,7 @@ class PasswordController extends Controller
                 $message->to($data['email'], $data['name'])->subject('Reset Password');
                 $message->from('depaknb5@gmail.com', 'Deepak');
             });
-
+            log::info('Password reset link sent');
             return response()->json([
                 'message' => 'Reset link Sent to your Email',
             ], 201);

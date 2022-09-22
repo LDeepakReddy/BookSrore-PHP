@@ -209,11 +209,41 @@ class BookController extends Controller
         }
     }
 
+
+
+
+    //Get Book By ID
+
+    function getBookById(Request $request)
+    {
+        $validator = Validator::make($request->only('id'), [
+            'id' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Invalid'], 400);
+        }
+
+        $currentUser = JWTAuth::authenticate($request->token);
+
+        // $currentid = $currentUser->id;
+       
+        $book = Book::where('id', $request->id)->first();
+
+        if (!$book) {
+            return response()->json([
+                'message' => 'Invalid id'
+            ], 401);
+        } else {
+            return response()->json(['book' => $book], 200);
+        }
+    }
+
     //DISPLAY ALL BOOKS
     public function displayAllBooks()
     {
         try {
-            $book = Book::paginate(2);
+            $book = Book::get();
 
             if ($book == []) {
                 throw new BookStoreException("Books are not there", 404);

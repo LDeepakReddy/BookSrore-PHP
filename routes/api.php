@@ -39,13 +39,15 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::post('updateBookById', [BookController::class, 'updateBookById']);
     Route::post('deleteBookById', [BookController::class, 'deleteBookById']);
     Route::post('addQuantityToExistingBook', [BookController::class, 'addQuantityToExistingBook']);
+
+    Route::get('getBookById', [BookController::class, 'getBookById']);
     Route::get('displayAllBooks', [BookController::class, 'displayAllBooks']);
     Route::get('sortPriceLowToHigh', [BookController::class, 'sortPriceLowToHigh']);
     Route::get('sortPriceHighToLow', [BookController::class, 'sortPriceHighToLow']);
     Route::post('searchBookByKeyword', [BookController::class, 'searchBookByKeyword']);
 
     Route::post('addBookToCartByBookId', [CartController::class, 'addBookToCartByBookId']);
-    Route::post('deleteBookByCartId', [CartController::class, 'deleteBookByCartId']);
+    Route::put('deleteBookByCartId', [CartController::class, 'deleteBookByCartId']);
     Route::get('getAllBooksInCart', [CartController::class, 'getAllBooksInCart']);
     Route::post('increamentBookQuantityInCart', [CartController::class, 'increamentBookQuantityInCart']);
     Route::post('decrementBookQuantityInCart', [CartController::class, 'decrementBookQuantityInCart']);
@@ -56,8 +58,9 @@ Route::group(['middleware' => ['jwt.verify']], function () {
     Route::get('getAllBooksInWishlist', [WishlistController::class, 'getAllBooksInWishlist']);
 
     Route::post('addAddress', [AddressController::class, 'addAddress']);
+
     Route::post('updateAddress', [AddressController::class, 'updateAddress']);
-    Route::post('deleteAddress', [AddressController::class, 'deleteAddress']);
+    Route::put('deleteAddress', [AddressController::class, 'deleteAddress']);
     Route::post('getAddress', [AddressController::class, 'getAddress']);
 
     Route::post('placeorder', [OrderController::class, 'placeOrder']);

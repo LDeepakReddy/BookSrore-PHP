@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateOrdersTable extends Migration
+class CreareOrdersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -16,17 +16,12 @@ class CreateOrdersTable extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('user_id');
-            $table->unsignedInteger('cart_id');
+            $table->unsignedInteger('book_id');
             $table->unsignedInteger('address_id');
-            $table->string('book_name');
-            $table->string('book_author');
-            $table->decimal('book_price');
-            $table->unsignedInteger('book_quantity');
-            $table->decimal('total_price');
             $table->string('order_id')->nullable();
-            $table->foreign('cart_id')
+            $table->foreign('book_id')
                 ->references('id')
-                ->on('carts')
+                ->on('books')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
             $table->foreign('user_id')

@@ -21,15 +21,13 @@ class SendOrderDetails extends Notification implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($order, $book, $cart, $currentUser)
+    public function __construct($order_id, $bookName, $bookAuthor, $quantity, $totalPrice)
     {
-        $this->user = $currentUser->first_name;
-        $this->orderId = $order->order_id;
-        $this->bookName = $book->name;
-        $this->bookAuthor = $book->author;
-        $this->bookPrice = $book->price;
-        $this->quantity = $cart->book_quantity;
-        $this->totalPrice = $order->total_price;
+        $this->order_id = $order_id;
+        $this->bookName = $bookName;
+        $this->bookAuthor = $bookAuthor;
+        $this->quantity = $quantity;
+        $this->totalPrice = $totalPrice;
     }
 
 
@@ -53,17 +51,17 @@ class SendOrderDetails extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line($this->user . ' your order is confirmed.')
-            ->line('Your Order Details : ')
-            ->line('Order Id : ' . $this->orderId)
-            ->line('Book Name : ' . $this->bookName)
-            ->line('Book Author : ' . $this->bookAuthor)
-            ->line('Book Price : ' . $this->bookPrice)
-            ->line('Book Quantity : ' . $this->quantity)
-            ->line('Total Payment : ' . $this->totalPrice)
-            ->line('Save the OrderId For Further Communication')
-            ->line('For Further Querry Contact This Email Id: ' . env('MAIL_USERNAME'))
-            ->line('Thank you for using our Application!');
+        ->line('You have Placed an Order From BOOK STORE App.')
+        ->line('your order is confirmed.')
+        ->line('Your Order Summary is ')
+        ->line('Order_Id : ' . $this->order_id)
+        ->line('Book Name : ' . $this->bookName)
+        ->line('Book Author : ' . $this->bookAuthor)
+        ->line('Book Quantity : ' . $this->quantity)
+        ->line('Total Payment : ' . $this->totalPrice)
+        ->line('Save the OrderId For Further Communication')
+        ->line('For Further Query Contact This Email Id')
+        ->line('Thank you for using our application');
     }
 
     /**

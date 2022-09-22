@@ -9,159 +9,85 @@ use App\Models\Book;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\User;
-use App\Mail\sendOrderDetails;
-use App\Mail\sendCancelledOrderDetails;
-// use App\Notifications\SendCancelOrderDetails;
-// use App\Notifications\SendOrderDetails;
+use App\Notifications\SendOrderDetails;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class OrderController extends Controller
 {
+
+ 
+
     public function placeOrder(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'address_id' => 'required',
+            'name' => 'required',
+            'quantity' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors()->toJson(), 400);
+        }
         try {
-            $validator = Validator::make($request->all(), [
-                'cart_id' => 'required',
-                'address_id' => 'required|integer'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors()->toJson(), 400);
-            }
-            $getUser = $request->user();
-
             $currentUser = JWTAuth::parseToken()->authenticate();
             if ($currentUser) {
-                $userCheck = new User();
-                $cartCheck = new Cart();
-                $bookCheck = new Book();
-                $addressCheck = new Address();
-                $orderCheck = new Order();
-                $user = $userCheck->userVerification($currentUser->id);
-
-                if ($user) {
-                    $order = Order::getOrderByCartId($request->cart_id);
-                    if (!$order) {
-
-                        $cart = $cartCheck->getCartByIdandUserId($request->cart_id, $currentUser->id);
-                        if ($cart) {
-                            $book = $bookCheck->findingBook($cart->book_id);
-                            if ($book) {
-                                if ($cart->book_quantity <= $book->quantity) {
-                                    $address = $addressCheck->addressExist($request->address_id, $currentUser->id);
-                                    if ($address) {
-                                        $order = $orderCheck->placeOrder($request, $currentUser, $book, $cart);
-                                        if ($order) {
-                                            //    $quantity= $cart->book_quantity;
-                                            // $book->quantity  -= $cart->book_quantity;
-                                            // $book->save();
-
-                                            Mail::to($getUser->email)->send(new sendOrderDetails($getUser, $order, $book));
-                                            return response()->json([
-                                                'message' => 'Order Placed Successfully',
-                                                'OrderId' => $order->order_id,
-                                                'BookName' => $book->name,
-                                                'Price' => $book->price,
-                                                'Quantity' => $cart->book_quantity,
-                                                'Total_Price' => $order->total_price,
-                                                'Message' => 'Mail Sent to Users Mail With Order Details',
-                                            ], 201);
-
-                                            $delay = now()->addSeconds(5);
-                                            $currentUser->notify((new SendOrderDetails($order, $book, $cart, $currentUser))->delay($delay));
-                                            Log::info('Order Placed Successfully');
-                                            Cache::remember('orders', 3600, function () {
-                                                return DB::table('orders')->get();
-                                            });
-                                        }
-                                    }
-                                    Log::error('Address Not Found');
-                                    throw new BookStoreException('Address Not Found', 404);
-                                }
-                                Log::error('Book Stock is Not Available in The Store');
-                                throw new BookStoreException('Book Stock is Not Available in The Store', 406);
-                            }
-                        }
-                        Log::error('Cart Not Found');
-                        throw new BookStoreException('Cart Not Found', 404);
-                    }
-                    Log::error('Already Placed an Order');
-                    throw new BookStoreException('Already Placed an Order', 409);
+                $book = new Book();
+                $cart = new Cart();
+                $address = new Address();
+                $bookDetails = $book->getBookDetails($request->input('name'));
+                if ($bookDetails == '') {
+                    Log::error('Book is not available');
+                    throw new BookStoreException("We Do not have this book in the store...", 401);
                 }
-                Log::error('You are Not a User');
-                throw new BookStoreException('You are Not a User', 404);
+
+                if ($bookDetails['quantity'] < $request->input('quantity')) {
+                    Log::error('Book stock is not available');
+                    throw new BookStoreException("This much stock is unavailable for the book", 401);
+                }
+
+                $getAddress = $address->addressExist($request->input('address_id'));
+                if (!$getAddress) {
+                    throw new BookStoreException("This address id not available", 401);
+                }
+
+                $total_price = $request->input('quantity') * $bookDetails['Price'];
+
+                $order = Order::create([
+                    'user_id' => $currentUser->id,
+                    'book_id' => $bookDetails['id'],
+                    'address_id' => $getAddress['id'],
+                    'order_id' => $this->gen_uid(10),
+
+                ]);
+
+                $userId = User::where('id', $currentUser->id)->first();
+
+                $delay = now()->addSeconds(5);
+                $userId->notify((new SendOrderDetails($order->order_id, $bookDetails['name'], $bookDetails['author'], $request->input('quantity'), $total_price))->delay($delay));
+
+                $bookDetails['quantity'] -= $request->quantity;
+                $bookDetails->save();
+                return response()->json([
+                    'message1' => 'Order Successfully Placed...',
+                    'OrderId' => $order->order_id,
+                    'Quantity' => $request->input('quantity'),
+                    'Total_Price' => $total_price,
+                    'message2' => 'Mail also sent to the user with all details',
+                ], 201);
+                Cache::remember('orders', 3600, function () {
+                    return DB::table('orders')->get();
+                });
             }
-            Log::error('Invalid Authorization Token');
-            throw new BookStoreException('Invalid Authorization Token', 401);
         } catch (BookStoreException $exception) {
-            return response()->json([
-                'message' => $exception->message()
-            ], $exception->statusCode());
+            return $exception->message();
         }
     }
 
-    public function cancelOrder(Request $request)
+    function gen_uid($l)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'order_id' => 'required|string'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors()->toJson(), 400);
-            }
-            $getUser = $request->user();
-            $currentUser = JWTAuth::parseToken()->authenticate();
-            if ($currentUser) {
-                $userCheck = new User();
-                $cartCheck = new Cart();
-                $bookCheck = new Book();
-                $orderCheck = new Order();
-                $user = $userCheck->userVerification($currentUser->id);
-                if ($user) {
-                    if (strlen($request->order_id) == 9) {
-                        $order = $orderCheck->getOrderByOrderID($request->order_id, $currentUser->id);
-                        if ($order) {
-                            $cart = $cartCheck->getCartByIdandUserId($order->cart_id, $currentUser->id);
-                            $book = $bookCheck->findingBook($cart->book_id);
-                            if ($order->delete()) {
-                                $book->quantity += $cart->book_quantity;
-                                $book->save();
-
-                                Mail::to($getUser->email)->send(new sendCancelledOrderDetails($getUser, $order, $book));
-                                return response()->json([
-                                    'message' => 'Order Cancelled Successfully',
-                                    'OrderId' => $order->order_id,
-                                    'Quantity' => $cart->book_quantity,
-                                    'Total_Price' => $order->total_price,
-                                    'Message' => 'Mail Sent to Users Mail With Order Details'
-                                ], 200);
-
-
-                                Log::info('Order Cancelled Successfully');
-                                Cache::forget('orders');
-                            }
-                        }
-                        Log::error('Order Not Found');
-                        throw new BookStoreException('Order Not Found', 404);
-                    }
-                    Log::error('Invalid OrderID');
-                    throw new BookStoreException('Invalid OrderID', 406);
-                }
-                Log::error('You are Not a User');
-                throw new BookStoreException('You are Not a User', 404);
-            }
-            Log::error('Invalid Authorization Token');
-            throw new BookStoreException('Invalid Authorization Token', 401);
-        } catch (BookStoreException $exception) {
-            return response()->json([
-                'message' => $exception->message()
-            ], $exception->statusCode());
-        }
+        return substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, $l);
     }
 }
